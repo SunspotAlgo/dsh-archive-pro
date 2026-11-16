@@ -40,6 +40,8 @@ Or from a terminal:
 dsh plugin --profile web add dsh-archive-pro
 ```
 
+The package is published on [npm](https://www.npmjs.com/package/dsh-archive-pro) as `dsh-archive-pro`.
+
 After installing, open **Settings → Archive manager pro**.
 
 ## What permanent deletion does

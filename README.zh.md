@@ -40,6 +40,8 @@ DeepSeek Harness 自带归档功能，却没有配套的维护手段。归档几
 dsh plugin --profile web add dsh-archive-pro
 ```
 
+包已发布到 [npm](https://www.npmjs.com/package/dsh-archive-pro)，包名 `dsh-archive-pro`。
+
 安装后进入 **设置 → 归档管理 Pro**。
 
 ## 彻底删除做了什么
