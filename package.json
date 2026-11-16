@@ -1,0 +1,79 @@
+{
+  "name": "dsh-archive-pro",
+  "version": "1.0.0",
+  "description": "Archive manager pro for DeepSeek Harness: search, filter, sort, multi-select, unarchive, and permanently delete archived sessions.",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "author": "SunspotAlgo",
+  "homepage": "https://github.com/SunspotAlgo/dsh-archive-pro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SunspotAlgo/dsh-archive-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SunspotAlgo/dsh-archive-pro/issues"
+  },
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.2.1"
+  },
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-pack",
+    "archive",
+    "session",
+    "batch-delete",
+    "plugin"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "icon": "./icon.svg",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ],
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib",
+    "client",
+    "locale",
+    "docs",
+    "cordis.patch.yml",
+    "icon.svg",
+    "LICENSE",
+    "README.md",
+    "README.zh.md"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+.tmp/
+.dsh-project-memory/
+*.log
+*.tgz
+.DS_Store
+Thumbs.db
