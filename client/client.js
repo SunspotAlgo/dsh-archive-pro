@@ -107,7 +107,9 @@ window.__ModuleLoader__.load({
 			scheduledAge30d: "30 天",
 			scheduledAgeNote: "只归档最后一次投递已超过该时长的会话，正在跑的任务不受影响。",
 			scheduledSkippedRecent: "个会话因过近未纳入",
-			scheduledSkippedRunning: "个任务正在执行，已跳过"
+			scheduledSkippedRunning: "个任务正在执行，已跳过",
+			tabArchived: "已归档会话",
+			tabScheduled: "定时任务会话"
 		};
 		const en = {
 			nav: "Archive manager pro",
@@ -202,7 +204,9 @@ window.__ModuleLoader__.load({
 			scheduledAge30d: "30 days",
 			scheduledAgeNote: "Only sessions whose latest delivery is older than this are archived, so a task that is still running is left alone.",
 			scheduledSkippedRecent: "sessions too recent to include",
-			scheduledSkippedRunning: "tasks still running, skipped"
+			scheduledSkippedRunning: "tasks still running, skipped",
+			tabArchived: "Archived sessions",
+			tabScheduled: "Scheduled sessions"
 		};
 
 		function formatBytes(bytes) {
@@ -1013,15 +1017,15 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * The "scheduled sessions" settings section.
+		 * The "scheduled sessions" panel.
 		 *
 		 * It lists the Sessions that scheduled tasks created and that are not
 		 * archived yet, offers one-click selection of all of them, and archives
 		 * the selection. Archiving is reversible; nothing is deleted here.
 		 * @param props - the injected props.
-		 * @returns the section element.
+		 * @returns the panel element.
 		 */
-		function ScheduledSessionsSection({ t }) {
+		function ScheduledSessionsPanel({ t }) {
 			const [data, setData] = react.useState(null);
 			const [available, setAvailable] = react.useState(true);
 			const [error, setError] = react.useState(null);
@@ -1331,6 +1335,65 @@ window.__ModuleLoader__.load({
 			});
 		}
 
+		/**
+		 * The plugin's single settings section.
+		 *
+		 * Two views sit behind one tab bar: the archive that already exists and
+		 * the sessions that scheduled tasks created but nobody archived yet.
+		 * @param props - the injected props.
+		 * @returns the section element.
+		 */
+		function ArchiveProSection({ t }) {
+			const [view, setView] = react.useState("archived");
+
+			const tabStyle = (active) => ({
+				padding: "6px 14px",
+				borderRadius: 6,
+				fontSize: 12,
+				fontWeight: active ? 600 : 400,
+				border: active
+					? "1px solid rgba(65,118,230,.5)"
+					: "1px solid transparent",
+				background: active ? "rgba(65,118,230,.14)" : "transparent",
+				color: active ? "var(--dsw-alias-brand-primary, #4176e6)" : "inherit",
+				opacity: active ? 1 : 0.7,
+				cursor: "pointer"
+			});
+
+			return react_jsx_runtime.jsxs("div", {
+				style: { display: "flex", flexDirection: "column", gap: 12 },
+				children: [
+					react_jsx_runtime.jsxs("div", {
+						style: {
+							display: "flex",
+							gap: 4,
+							alignItems: "center",
+							padding: "0 12px",
+							borderBottom: "1px solid var(--dsh-border, rgba(128,128,128,.2))",
+							paddingBottom: 8
+						},
+						children: [
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								onClick: () => setView("archived"),
+								style: tabStyle(view === "archived"),
+								children: t("tabArchived")
+							}),
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								onClick: () => setView("scheduled"),
+								style: tabStyle(view === "scheduled"),
+								children: t("tabScheduled")
+							})
+						]
+					}),
+					view === "archived"
+						? react_jsx_runtime.jsx(ArchiveManagerSection, { t })
+						: react_jsx_runtime.jsx(ScheduledSessionsPanel, { t })
+				]
+			});
+		}
+
 		function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState, requestDelete, deleteT, nativeMenuAvailable }) {
 			const [, setOpen] = useMenuOpenState();
 			if (nativeMenuAvailable?.()) return null;
@@ -1440,18 +1503,7 @@ window.__ModuleLoader__.load({
 				label: () => t("nav"),
 				locale: NS,
 				inject: () => ({ t })
-			}, ArchiveManagerSection));
-			// A separate section: this one tidies sessions that are not archived yet,
-			// which is a different job from managing the archive itself.
-			ctx.slots.inject("settings.section", () => ctx.slots.register({
-				name: "settings.section",
-				id: "archive-pro-scheduled",
-				priority: -2,
-				order: 61,
-				label: () => t("scheduledNav"),
-				locale: NS,
-				inject: () => ({ t })
-			}, ScheduledSessionsSection));
+			}, ArchiveProSection));
 		}
 		exports.name = name;
 		exports.inject = inject;

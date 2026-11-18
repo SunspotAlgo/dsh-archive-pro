@@ -68,9 +68,10 @@ const ctx = {
 };
 moduleExports.apply(ctx);
 
-check('two settings sections', sections.length, 2);
-check('the archive section keeps its id', sections.some((s) => s.id === 'archive-pro'), true);
-check('a scheduled section is registered', sections.some((s) => s.id === 'archive-pro-scheduled'), true);
+check('exactly one settings section', sections.length, 1);
+check('the section keeps the archive id', sections.some((s) => s.id === 'archive-pro'), true);
+check('no separate scheduled section', sections.some((s) => s.id === 'archive-pro-scheduled'), false);
+check('the section hosts a tab bar', clientSource.includes('tabArchived') && clientSource.includes('tabScheduled'), true);
 
 // --- the client only uses the local routes ---------------------------------
 check('reads the scheduled list route', clientSource.includes('/dsh-archive-pro/scheduled-sessions'), true);

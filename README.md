@@ -4,7 +4,7 @@ English | [简体中文](./README.zh.md)
 
 Bulk management for archived DeepSeek Harness sessions: search, filter, sort, multi-select, unarchive, and permanently delete — all from **Settings → Archive manager pro**.
 
-A second section, **Settings → Scheduled sessions**, does the opposite job: it finds the sessions that scheduled tasks created and are not archived yet, selects them all in one click, and archives them.
+A second tab inside the same section, **Scheduled sessions**, does the opposite job: it finds the sessions that scheduled tasks created and are not archived yet, selects them all in one click, and archives them.
 
 ![Archive manager pro settings section](./docs/preview.svg)
 
@@ -36,7 +36,7 @@ On-disk size is read from the real session log directory, so the heaviest archiv
 
 ## Scheduled sessions
 
-**Settings → Scheduled sessions** handles the sessions a scheduled task created that are **not archived yet** — the opposite direction from the archive manager.
+The **Scheduled sessions** tab of **Settings → Archive manager pro** handles the sessions a scheduled task created that are **not archived yet** — the opposite direction from the archive manager.
 
 | Capability | Detail |
 | --- | --- |
@@ -73,7 +73,7 @@ dsh plugin --profile web add dsh-archive-pro
 
 The package is published on [npm](https://www.npmjs.com/package/dsh-archive-pro) as `dsh-archive-pro`.
 
-After installing, open **Settings → Archive manager pro**, or **Settings → Scheduled sessions** for the task-created sessions.
+After installing, open **Settings → Archive manager pro** and use the tab bar to switch between archived sessions and scheduled sessions.
 
 ## What permanent deletion does
 
