@@ -26,7 +26,8 @@ This plugin adds the maintenance layer the archive list is missing, on both side
 | Age filter | Archived more than 7 / 30 / 90 days ago |
 | Sorting | Created time, on-disk size, title — each in both directions |
 | Multi-select | Checkbox per row, `Shift`-click to select a contiguous range |
-| Select visible | Operates on the filtered set only, never sessions the filters hide |
+| Select visible | Selects only the current filter result |
+| Hidden selection count | Selections kept across filters are counted separately and called out before batch actions |
 | Batch unarchive | Return many sessions to their workspace sidebar at once |
 | Batch delete | Permanent, with running tasks stopped and caches cleared |
 | Purge visible | Clear the whole filtered list, skipping pinned sessions by default |
@@ -40,8 +41,9 @@ The **Scheduled sessions** tab of **Settings → Archive manager pro** handles t
 
 | Capability | Detail |
 | --- | --- |
-| One-click selection | Scans every task's delivery records and selects all task sessions that are still unarchived |
-| Idle threshold | Only sessions whose latest delivery is older than the chosen window (1h / 6h / 24h / 7d / 30d) |
+| One-click selection | Selects eligible, unpinned sessions in the current search results |
+| Idle threshold | The list refreshes when this changes; only sessions whose latest delivery is older than the chosen window (1h / 6h / 24h / 7d / 30d) |
+| Search scope | One-click selection uses the current search; hidden selections are counted and called out before batch actions |
 | Running tasks | A task whose latest delivery is still queued or executing is skipped entirely |
 | Source task shown | Each row names the scheduled task that created it |
 | Safe by construction | A task that delivers into a session you already had is never included |

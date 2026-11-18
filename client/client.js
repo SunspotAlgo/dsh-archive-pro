@@ -45,6 +45,15 @@ window.__ModuleLoader__.load({
 			none: "—",
 			searchPlaceholder: "搜索标题或会话 ID…",
 			clearFilters: "重置筛选",
+			clearSearch: "清空搜索",
+			retry: "重试",
+			restoreDone: "已取消归档，会话已返回工作区。",
+			deleteDone: "会话已永久删除。",
+			statsSelectedHidden: "项已选但被当前筛选隐藏",
+			filterWorkspaceLabel: "按工作区筛选",
+			filterDiskLabel: "按日志状态筛选",
+			filterTimeLabel: "按时间筛选",
+			sortLabel: "排序方式",
 			filterWorkspaceAll: "全部工作区",
 			filterDiskAll: "全部状态",
 			filterDiskYes: "仅磁盘有日志",
@@ -60,6 +69,7 @@ window.__ModuleLoader__.load({
 			sortTitleAsc: "标题：A → Z",
 			sortTitleDesc: "标题：Z → A",
 			selectAllVisible: "全选当前列表",
+			selectSession: "选择会话",
 			statsMatched: "命中",
 			statsUnit: "条",
 			statsSelected: "已选",
@@ -77,15 +87,18 @@ window.__ModuleLoader__.load({
 			batchResultFailed: "失败",
 			skipPinnedLabel: "一键清空时跳过已置顶会话",
 			scheduledNav: "定时任务会话",
-			scheduledDesc: "清理尚未归档的定时任务会话：一键勾选由定时任务触发的会话，确认后批量归档。归档不会删除任何文件，之后仍可在「归档管理 Pro」里取消归档或永久删除。",
+			scheduledDesc: "整理尚未归档的定时任务会话。设置闲置时长并搜索后，可一键选中当前结果中符合条件且未置顶的会话，再批量归档。归档不会删除内容，之后仍可在「归档管理 Pro」里取消归档或永久删除。",
 			scheduledUnavailable: "当前环境未启用定时任务（schedule）服务，无法识别由定时任务触发的会话。",
 			scheduledEmpty: "没有发现由定时任务创建、且尚未归档的会话。",
 			scheduledEmptyFiltered: "没有符合条件的定时任务会话。",
 			scheduledScan: "一键勾选定时任务会话",
-			scheduledScanTip: "扫描定时任务的投递记录，勾选全部由定时任务创建、且尚未归档的会话",
+			scheduledScanTip: "按当前闲置阈值和搜索条件，选中全部符合条件且未置顶的会话",
 			scheduledScanning: "扫描中…",
+			scheduledRefreshing: "刷新中…",
 			scheduledRefresh: "刷新",
 			scheduledArchiveSelected: "归档所选",
+			scheduledSelectAll: "选中当前结果中可归档的会话",
+			scheduledSelectedHidden: "项已选但被搜索隐藏",
 			scheduledArchiving: "归档中…",
 			scheduledStats: "共发现",
 			scheduledStatsFound: "个定时任务会话",
@@ -143,7 +156,16 @@ window.__ModuleLoader__.load({
 			deleteFailed: "Delete failed.",
 			none: "—",
 			searchPlaceholder: "Filter by title or session ID…",
-			clearFilters: "Reset",
+			clearFilters: "Reset filters",
+			clearSearch: "Clear search",
+			retry: "Retry",
+			restoreDone: "Unarchived; the session is back in its workspace.",
+			deleteDone: "Session permanently deleted.",
+			statsSelectedHidden: "selected items are hidden by current filters",
+			filterWorkspaceLabel: "Filter by workspace",
+			filterDiskLabel: "Filter by log state",
+			filterTimeLabel: "Filter by age",
+			sortLabel: "Sort order",
 			filterWorkspaceAll: "All workspaces",
 			filterDiskAll: "All log states",
 			filterDiskYes: "On disk only",
@@ -159,6 +181,7 @@ window.__ModuleLoader__.load({
 			sortTitleAsc: "Title: A → Z",
 			sortTitleDesc: "Title: Z → A",
 			selectAllVisible: "Select visible",
+			selectSession: "Select session",
 			statsMatched: "Matched",
 			statsUnit: "items",
 			statsSelected: "Selected",
@@ -176,15 +199,18 @@ window.__ModuleLoader__.load({
 			batchResultFailed: "failed",
 			skipPinnedLabel: "Skip pinned sessions on purge",
 			scheduledNav: "Scheduled sessions",
-			scheduledDesc: "Tidy up the sessions that scheduled tasks created and that are not archived yet: select them all in one click, then archive the selection. Archiving deletes nothing and the sessions stay manageable in Archive manager pro.",
+			scheduledDesc: "Tidy up unarchived sessions created by scheduled tasks. Set an idle age and search, then select every eligible unpinned session in the current results and archive them together. Archiving keeps the session data and you can unarchive or permanently delete it in Archive manager pro.",
 			scheduledUnavailable: "This profile has no schedule service, so task-created sessions cannot be identified.",
 			scheduledEmpty: "No unarchived session created by a scheduled task was found.",
 			scheduledEmptyFiltered: "No scheduled session matches the current filters.",
 			scheduledScan: "Select all task sessions",
-			scheduledScanTip: "Read the delivery records of every scheduled task and select the sessions it created that are not archived yet",
+			scheduledScanTip: "Select every eligible unpinned session matching the current age threshold and search",
 			scheduledScanning: "Scanning…",
+			scheduledRefreshing: "Refreshing…",
 			scheduledRefresh: "Refresh",
 			scheduledArchiveSelected: "Archive selected",
+			scheduledSelectAll: "Select eligible sessions in current results",
+			scheduledSelectedHidden: "selected items are hidden by search",
 			scheduledArchiving: "Archiving…",
 			scheduledStats: "Found",
 			scheduledStatsFound: "task sessions",
@@ -226,8 +252,7 @@ window.__ModuleLoader__.load({
 			border: "1px solid var(--dsh-border, rgba(128,128,128,.35))",
 			background: "var(--dsw-alias-bg-overlay, rgba(128,128,128,.08))",
 			color: "inherit",
-			fontSize: 12,
-			outline: "none"
+			fontSize: 12
 		};
 
 		function ArchiveRow({ row, t, selected, onToggleSelect, onRestore, onDelete, busy }) {
@@ -255,6 +280,7 @@ window.__ModuleLoader__.load({
 						checked: selected,
 						disabled: busy,
 						onChange: (e) => onToggleSelect(row.sessionId, e.nativeEvent?.shiftKey || false),
+						"aria-label": `${t("selectSession")}: ${title}`,
 						style: { width: 15, height: 15, cursor: "pointer", flex: "0 0 auto", accentColor: "var(--dsw-alias-brand-primary, #4176e6)" }
 					}),
 					react_jsx_runtime.jsxs("div", {
@@ -331,83 +357,33 @@ window.__ModuleLoader__.load({
 			});
 		}
 
-		function ConfirmModal({ t, title, summary, onCancel, onConfirm, titleText, bodyText, okText, danger = true }) {
-			react.useEffect(() => {
-				const onKey = (event) => {
-					if (event.key === "Escape") onCancel();
-				};
-				globalThis.addEventListener("keydown", onKey);
-				return () => globalThis.removeEventListener("keydown", onKey);
-			}, [onCancel]);
-			const btnBorder = danger ? "rgba(220,80,80,.5)" : "rgba(80,170,90,.5)";
-			const btnBg = danger ? "rgba(220,80,80,.12)" : "rgba(80,170,90,.12)";
-			const btnColor = danger ? "var(--dsh-danger, #dc5050)" : "var(--dsh-success, #4aa05a)";
-			return react_jsx_runtime.jsx("div", {
-				style: {
-					position: "fixed",
-					inset: 0,
-					zIndex: 1000,
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					background: "rgba(0,0,0,.45)"
-				},
-				onClick: onCancel,
-				children: react_jsx_runtime.jsxs("div", {
-					onClick: (event) => event.stopPropagation(),
-					style: {
-						background: "var(--dsw-alias-bg-overlay, #202227)",
-						border: "1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.35))",
-						borderRadius: 12,
-						padding: "18px 20px",
-						width: "min(440px, calc(100% - 48px))",
-						boxShadow: "0 12px 40px rgba(0,0,0,.5)"
-					},
+		function ConfirmModal({ t, title, summary, onCancel, onConfirm, titleText, bodyText, okText, busyText, danger = true, busy = false }) {
+			const btnColor = danger ? "var(--dsh-danger, #dc5050)" : "var(--dsw-alias-brand-primary, #4176e6)";
+			return react_jsx_runtime.jsx(ui.Modal, {
+				open: true,
+				onClose: busy ? () => {} : onCancel,
+				closeLabel: t("close"),
+				title: titleText || t("confirmTitle"),
+				description: bodyText || t("confirmBody"),
+				footer: react_jsx_runtime.jsxs(react_jsx_runtime.Fragment, {
 					children: [
-						react_jsx_runtime.jsx("div", {
-							style: { fontWeight: 600, fontSize: 15, marginBottom: 10, color: danger ? "var(--dsh-danger, #dc5050)" : "var(--dsw-alias-brand-primary, #4176e6)" },
-							children: titleText || t("confirmTitle")
+						react_jsx_runtime.jsx(ui.Button, {
+							variant: "outline", disabled: busy, onClick: onCancel,
+							children: t("cancel")
 						}),
-						react_jsx_runtime.jsxs("div", {
-							style: { fontSize: 13, lineHeight: 1.5, marginBottom: 16, color: "var(--dsw-alias-label-primary, inherit)" },
-							children: [
-								title ? react_jsx_runtime.jsx("div", { style: { fontWeight: 600, marginBottom: 4, wordBreak: "break-all" }, children: title }) : null,
-								summary ? react_jsx_runtime.jsx("div", { style: { fontSize: 12, opacity: 0.78, marginBottom: 8 }, children: summary }) : null,
-								bodyText || t("confirmBody")
-							]
-						}),
-						react_jsx_runtime.jsxs("div", {
-							style: { display: "flex", justifyContent: "flex-end", gap: 8 },
-							children: [
-								react_jsx_runtime.jsx("button", {
-									type: "button",
-									onClick: onCancel,
-									style: {
-										padding: "6px 14px",
-										borderRadius: 6,
-										border: "1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.35))",
-										background: "transparent",
-										color: "var(--dsw-alias-label-primary, inherit)",
-										cursor: "pointer"
-									},
-									children: t("cancel")
-								}),
-								react_jsx_runtime.jsx("button", {
-									type: "button",
-									onClick: onConfirm,
-									style: {
-										padding: "6px 14px",
-										borderRadius: 6,
-										border: "1px solid " + btnBorder,
-										background: btnBg,
-										color: btnColor,
-										fontWeight: 600,
-										cursor: "pointer"
-									},
-									children: okText || t("confirmOk")
-								})
-							]
+						react_jsx_runtime.jsx(ui.Button, {
+							variant: "outline", disabled: busy, onClick: onConfirm,
+							children: react_jsx_runtime.jsx("span", {
+								style: { color: btnColor },
+								children: busy ? (busyText || t("batchProcessing")) : (okText || t("confirmOk"))
+							})
 						})
+					]
+				}),
+				children: react_jsx_runtime.jsxs(react_jsx_runtime.Fragment, {
+					children: [
+						title ? react_jsx_runtime.jsx("div", { style: { wordBreak: "break-word", fontWeight: 600, marginBottom: 4 }, children: title }) : null,
+						summary ? react_jsx_runtime.jsx("div", { style: { fontSize: 12, opacity: 0.78, marginBottom: 8 }, children: summary }) : null
 					]
 				})
 			});
@@ -574,6 +550,7 @@ window.__ModuleLoader__.load({
 				}
 				return { count: ids.length, bytes, ids };
 			}, [rows, selectedIds]);
+			const selectedHiddenCount = Math.max(0, selectedSummary.count - visibleSelectedCount);
 
 			const onRestore = react.useCallback((sessionId) => {
 				setBusyId(sessionId);
@@ -586,6 +563,7 @@ window.__ModuleLoader__.load({
 					.then((res) => res.json())
 					.then((body) => {
 						if (body && (body.ok === true || body.restored === true)) {
+							setNotice(t("restoreDone"));
 							load();
 						} else {
 							setError((body && body.error) || t("restoreFailed"));
@@ -614,6 +592,7 @@ window.__ModuleLoader__.load({
 					.then((res) => res.json())
 					.then((body) => {
 						if (body && (body.ok === true || body.deleted === true)) {
+							setNotice(t("deleteDone"));
 							load();
 						} else {
 							setError((body && body.error) || t("deleteFailed"));
@@ -715,11 +694,14 @@ window.__ModuleLoader__.load({
 												value: query,
 												onChange: (e) => setQuery(e.target.value),
 												placeholder: t("searchPlaceholder"),
+												"aria-label": t("searchPlaceholder"),
 												style: { ...controlStyle, width: "100%", paddingRight: query ? 26 : 10, boxSizing: "border-box" }
 											}),
 											query ? react_jsx_runtime.jsx("button", {
 												type: "button",
 												onClick: () => setQuery(""),
+												"aria-label": t("clearSearch"),
+												title: t("clearSearch"),
 												style: {
 													position: "absolute",
 													right: 6,
@@ -738,6 +720,7 @@ window.__ModuleLoader__.load({
 									}),
 									react_jsx_runtime.jsxs("select", {
 										value: wsFilter,
+											"aria-label": t("filterWorkspaceLabel"),
 										onChange: (e) => setWsFilter(e.target.value),
 										style: controlStyle,
 										children: [
@@ -748,6 +731,7 @@ window.__ModuleLoader__.load({
 									}),
 									react_jsx_runtime.jsxs("select", {
 										value: diskFilter,
+											"aria-label": t("filterDiskLabel"),
 										onChange: (e) => setDiskFilter(e.target.value),
 										style: controlStyle,
 										children: [
@@ -758,6 +742,7 @@ window.__ModuleLoader__.load({
 									}),
 									react_jsx_runtime.jsxs("select", {
 										value: timeFilter,
+											"aria-label": t("filterTimeLabel"),
 										onChange: (e) => setTimeFilter(e.target.value),
 										style: controlStyle,
 										children: [
@@ -769,6 +754,7 @@ window.__ModuleLoader__.load({
 									}),
 									react_jsx_runtime.jsxs("select", {
 										value: sortBy,
+											"aria-label": t("sortLabel"),
 										onChange: (e) => setSortBy(e.target.value),
 										style: controlStyle,
 										children: [
@@ -827,7 +813,7 @@ window.__ModuleLoader__.load({
 											selectedSummary.count > 0 ? react_jsx_runtime.jsxs("span", {
 												style: { color: "var(--dsw-alias-brand-primary, #4176e6)", fontWeight: 600 },
 												children: [
-													t("statsSelected") + " " + selectedSummary.count + " " + t("statsUnit") + " (" + formatBytes(selectedSummary.bytes) + ") ",
+													t("statsSelected") + " " + selectedSummary.count + " " + t("statsUnit") + (selectedHiddenCount > 0 ? ` · ${selectedHiddenCount} ${t("statsSelectedHidden")}` : "") + " (" + formatBytes(selectedSummary.bytes) + ") ",
 													react_jsx_runtime.jsx("button", {
 														type: "button",
 														onClick: () => setSelectedIds(new Set()),
@@ -854,7 +840,7 @@ window.__ModuleLoader__.load({
 													react_jsx_runtime.jsx("button", {
 														type: "button",
 														disabled: batchBusy,
-														onClick: () => setBatchModal({ mode: "restore", ids: selectedSummary.ids, totalBytes: selectedSummary.bytes }),
+														onClick: () => setBatchModal({ mode: "restore", ids: selectedSummary.ids, totalBytes: selectedSummary.bytes, hiddenCount: selectedHiddenCount }),
 														style: {
 															padding: "5px 11px",
 															borderRadius: 6,
@@ -869,7 +855,7 @@ window.__ModuleLoader__.load({
 													react_jsx_runtime.jsx("button", {
 														type: "button",
 														disabled: batchBusy,
-														onClick: () => setBatchModal({ mode: "delete", ids: selectedSummary.ids, totalBytes: selectedSummary.bytes }),
+														onClick: () => setBatchModal({ mode: "delete", ids: selectedSummary.ids, totalBytes: selectedSummary.bytes, hiddenCount: selectedHiddenCount }),
 														style: {
 															padding: "5px 11px",
 															borderRadius: 6,
@@ -923,18 +909,28 @@ window.__ModuleLoader__.load({
 					}) : null,
 
 					notice === null ? null : react_jsx_runtime.jsx("div", {
+						role: "status",
 						style: { padding: "8px 12px", borderRadius: 6, background: "rgba(80,170,90,.12)", color: "var(--dsh-success, #4aa05a)", fontSize: 12 },
 						children: notice
 					}),
-					error === null ? null : react_jsx_runtime.jsx("div", {
+					error === null ? null : react_jsx_runtime.jsxs("div", {
 						role: "alert",
 						style: { padding: "8px 12px", color: "var(--dsh-danger, #dc5050)", whiteSpace: "pre-wrap", fontSize: 12 },
-						children: error
+						children: [
+							error,
+							rows === null ? react_jsx_runtime.jsx("button", {
+								type: "button", onClick: load,
+								style: { ...controlStyle, marginInlineStart: 8, cursor: "pointer" },
+								children: t("retry")
+							}) : null
+						]
 					}),
 					react_jsx_runtime.jsx("div", { style: { padding: "0 12px" }, children: body }),
 
 					pendingDelete === null ? null : react_jsx_runtime.jsx(ConfirmModal, {
 						t,
+						busy: busyId !== null,
+						busyText: t("deleting"),
 						title: pendingDelete.title || pendingDelete.sessionId,
 						summary: formatBytes(pendingDelete.sizeBytes),
 						onCancel: () => setPendingDelete(null),
@@ -942,9 +938,10 @@ window.__ModuleLoader__.load({
 					}),
 					batchModal === null ? null : react_jsx_runtime.jsx(ConfirmModal, {
 						t,
+						busy: batchBusy,
 						danger: batchModal.mode !== "restore",
 						title: batchModal.ids.length + " " + t("statsUnit"),
-						summary: formatBytes(batchModal.totalBytes),
+						summary: formatBytes(batchModal.totalBytes) + (batchModal.hiddenCount > 0 ? ` · ${batchModal.hiddenCount} ${t("statsSelectedHidden")}` : ""),
 						titleText: batchModal.mode === "restore" ? t("batchRestoreTitle") : t("batchDeleteTitle"),
 						bodyText: batchModal.mode === "restore" ? t("batchRestoreBody") : t("batchDeleteBody"),
 						okText: batchModal.mode === "restore" ? t("batchRestore") : t("batchDelete"),
@@ -1036,6 +1033,8 @@ window.__ModuleLoader__.load({
 			const [notice, setNotice] = react.useState(null);
 			const [busy, setBusy] = react.useState(false);
 			const [scanning, setScanning] = react.useState(false);
+			const [refreshing, setRefreshing] = react.useState(false);
+			const loadRequestRef = react.useRef(0);
 			const [query, setQuery] = react.useState("");
 			const [selectedIds, setSelectedIds] = react.useState(() => new Set());
 			const [confirming, setConfirming] = react.useState(false);
@@ -1043,10 +1042,13 @@ window.__ModuleLoader__.load({
 			const [minAgeMinutes, setMinAgeMinutes] = react.useState(60);
 
 			const load = react.useCallback(() => {
+				const requestId = ++loadRequestRef.current;
 				setError(null);
+				setRefreshing(true);
 				fetch(`/dsh-archive-pro/scheduled-sessions?minAgeMinutes=${minAgeMinutes}`, { cache: "no-store" })
 					.then((res) => res.json())
 					.then((body) => {
+						if (requestId !== loadRequestRef.current) return;
 						if (body && body.ok === true) {
 							setAvailable(body.available !== false);
 							setData(body);
@@ -1060,8 +1062,13 @@ window.__ModuleLoader__.load({
 							setError((body && body.error) || t("loadFailed"));
 						}
 					})
-					.catch(() => setError(t("loadFailed")));
-			}, [t]);
+					.catch(() => {
+						if (requestId === loadRequestRef.current) setError(t("loadFailed"));
+					})
+					.finally(() => {
+						if (requestId === loadRequestRef.current) setRefreshing(false);
+					});
+			}, [t, minAgeMinutes]);
 
 			react.useEffect(() => {
 				load();
@@ -1088,9 +1095,10 @@ window.__ModuleLoader__.load({
 				});
 			}, []);
 
-			/** Select every unarchived task session that is not pinned. */
+			/** Refresh the current age threshold and select unpinned search results. */
 			const selectAll = react.useCallback(() => {
 				setScanning(true);
+				setError(null);
 				setNotice(null);
 				fetch(`/dsh-archive-pro/scheduled-sessions?minAgeMinutes=${minAgeMinutes}`, { cache: "no-store" })
 					.then((res) => res.json())
@@ -1102,23 +1110,29 @@ window.__ModuleLoader__.load({
 						setAvailable(body.available !== false);
 						setData(body);
 						const rows = body.sessions ?? [];
+						const q = query.trim().toLowerCase();
+						const matchingRows = q ? rows.filter((row) =>
+							(row.title || "").toLowerCase().includes(q)
+							|| (row.sessionId || "").toLowerCase().includes(q)
+							|| (row.taskTitle || "").toLowerCase().includes(q)
+						) : rows;
 						const picked = new Set();
 						let skipped = 0;
-						for (const row of rows) {
+						for (const row of matchingRows) {
 							if (row.isPinned) { skipped++; continue; }
 							picked.add(row.sessionId);
 						}
 						setSelectedIds(picked);
 						setNotice({
 							kind: "scan",
-							found: body.discovered ?? rows.length,
+							found: matchingRows.length,
 							selected: picked.size,
 							skipped,
 						});
 					})
 					.catch(() => setError(t("loadFailed")))
 					.finally(() => setScanning(false));
-			}, [t, minAgeMinutes]);
+			}, [t, minAgeMinutes, query]);
 
 			const archiveSelected = react.useCallback(async () => {
 				const ids = [...selectedIds];
@@ -1155,8 +1169,7 @@ window.__ModuleLoader__.load({
 				border: "1px solid var(--dsh-border, rgba(128,128,128,.35))",
 				background: "var(--dsw-alias-bg-overlay, rgba(128,128,128,.08))",
 				color: "inherit",
-				fontSize: 12,
-				outline: "none"
+				fontSize: 12
 			};
 
 			let body;
@@ -1180,12 +1193,15 @@ window.__ModuleLoader__.load({
 						t,
 						selected: selectedIds.has(row.sessionId),
 						onToggle: toggle,
-						busy: busy || scanning
+						busy: busy || scanning || refreshing
 					}, row.sessionId))
 				});
 			}
 
 			const selectedCount = selectedIds.size;
+			const resultsStale = data !== null && Number(data.minAgeMs) !== minAgeMinutes * 60000;
+			const visibleSelectedCount = visible.reduce((count, row) => count + (selectedIds.has(row.sessionId) ? 1 : 0), 0);
+			const selectedHiddenCount = Math.max(0, selectedCount - visibleSelectedCount);
 
 			return react_jsx_runtime.jsxs("div", {
 				style: { display: "flex", flexDirection: "column", gap: 10, padding: "4px 0" },
@@ -1197,26 +1213,50 @@ window.__ModuleLoader__.load({
 						children: [
 							react_jsx_runtime.jsx("button", {
 								type: "button",
-								disabled: !available || scanning || busy,
+								disabled: !available || scanning || busy || refreshing,
 								onClick: selectAll,
 								title: t("scheduledScanTip"),
 								style: {
 									...controlStyle,
-									cursor: !available || scanning || busy ? "default" : "pointer",
-									opacity: !available || scanning || busy ? 0.45 : 1,
+									cursor: !available || scanning || busy || refreshing ? "default" : "pointer",
+									opacity: !available || scanning || busy || refreshing ? 0.45 : 1,
 									fontWeight: 600,
 									color: "var(--dsw-alias-brand-primary, #4176e6)",
 									borderColor: "rgba(65,118,230,.5)",
 									background: "rgba(65,118,230,.12)"
 								},
-								children: scanning ? t("scheduledScanning") : t("scheduledScan")
+								children: scanning ? t("scheduledScanning") : t("scheduledSelectAll")
 							}),
+							selectedCount > 0 ? react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: busy || refreshing || resultsStale,
+								onClick: () => setConfirming(true),
+								style: {
+									padding: "6px 16px",
+									borderRadius: 6,
+									fontSize: 12,
+									fontWeight: 600,
+									border: "1px solid rgba(65,118,230,.5)",
+									background: "rgba(65,118,230,.14)",
+									color: "var(--dsw-alias-brand-primary, #4176e6)",
+									cursor: busy || refreshing || resultsStale ? "default" : "pointer",
+									opacity: busy || refreshing || resultsStale ? 0.45 : 1
+								},
+								children: busy ? t("scheduledArchiving") : `${t("scheduledArchiveSelected")} (${selectedCount})`
+							}) : null,
+							selectedCount > 0 ? react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: busy,
+								onClick: () => setSelectedIds(new Set()),
+								style: { ...controlStyle, cursor: busy ? "default" : "pointer", opacity: busy ? 0.45 : 0.85 },
+								children: t("clearSelection")
+							}) : null,
 							react_jsx_runtime.jsx("button", {
 								type: "button",
-								disabled: busy || scanning,
+								disabled: busy || scanning || refreshing,
 								onClick: load,
-								style: { ...controlStyle, cursor: "pointer", opacity: 0.85 },
-								children: t("scheduledRefresh")
+								style: { ...controlStyle, cursor: refreshing ? "default" : "pointer", opacity: refreshing ? 0.55 : 0.85 },
+								children: refreshing ? t("scheduledRefreshing") : t("scheduledRefresh")
 							}),
 							react_jsx_runtime.jsxs("div", {
 								style: { display: "flex", gap: 6, alignItems: "center" },
@@ -1228,7 +1268,8 @@ window.__ModuleLoader__.load({
 									}),
 									react_jsx_runtime.jsxs("select", {
 										value: String(minAgeMinutes),
-										disabled: busy || scanning,
+										"aria-label": t("scheduledAge"),
+										disabled: busy || scanning || refreshing,
 										onChange: (event) => setMinAgeMinutes(Number(event.target.value)),
 										style: { ...controlStyle, cursor: "pointer" },
 										children: [
@@ -1246,16 +1287,19 @@ window.__ModuleLoader__.load({
 								value: query,
 								onChange: (event) => setQuery(event.target.value),
 								placeholder: t("searchPlaceholder"),
+												"aria-label": t("searchPlaceholder"),
 								style: { ...controlStyle, flex: "1 1 200px", minWidth: 160 }
 							}) : null
 						]
 					}),
 
+					refreshing && data !== null ? react_jsx_runtime.jsx("div", { role: "status", style: { fontSize: 12, opacity: 0.7, padding: "0 12px" }, children: t("scheduledRefreshing") }) : null,
+
 					data !== null && (sessions.length > 0 || (data.skippedRecent ?? 0) > 0 || (data.skippedGone ?? 0) > 0) ? react_jsx_runtime.jsxs("div", {
 						style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", fontSize: 12, opacity: 0.75, padding: "0 12px" },
 						children: [
 							react_jsx_runtime.jsx("span", { children: `${t("scheduledStats")} ${data.discovered ?? sessions.length} ${t("scheduledStatsFound")}` }),
-							react_jsx_runtime.jsx("span", { children: `${t("scheduledStatsSelected")} ${selectedCount}` }),
+							react_jsx_runtime.jsx("span", { children: `${t("scheduledStatsSelected")} ${selectedCount}${selectedHiddenCount > 0 ? ` · ${selectedHiddenCount} ${t("scheduledSelectedHidden")}` : ""}` }),
 							(data.skippedRecent ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
 								style: { color: "var(--dsh-warning, #e6a23c)" },
 								children: `${data.skippedRecent} ${t("scheduledSkippedRecent")}`
@@ -1295,49 +1339,29 @@ window.__ModuleLoader__.load({
 						children: t("scheduledTaskRunning")
 					}) : null,
 
-					error === null ? null : react_jsx_runtime.jsx("div", {
+					error === null ? null : react_jsx_runtime.jsxs("div", {
 						role: "alert",
 						style: { fontSize: 12, color: "var(--dsh-danger, #dc5050)", whiteSpace: "pre-wrap", padding: "0 12px" },
-						children: error
+						children: [
+							error,
+							data === null ? react_jsx_runtime.jsx("button", {
+								type: "button", onClick: load, disabled: refreshing,
+								style: { ...controlStyle, marginInlineStart: 8, cursor: refreshing ? "default" : "pointer" },
+								children: refreshing ? t("scheduledRefreshing") : t("retry")
+							}) : null
+						]
 					}),
 
 					react_jsx_runtime.jsx("div", { style: { padding: "0 12px" }, children: body }),
 
-					selectedCount > 0 ? react_jsx_runtime.jsxs("div", {
-						style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "0 12px" },
-						children: [
-							react_jsx_runtime.jsx("button", {
-								type: "button",
-								disabled: busy,
-								onClick: () => setConfirming(true),
-								style: {
-									padding: "6px 16px",
-									borderRadius: 6,
-									fontSize: 12,
-									fontWeight: 600,
-									border: "1px solid rgba(65,118,230,.5)",
-									background: "rgba(65,118,230,.14)",
-									color: "var(--dsw-alias-brand-primary, #4176e6)",
-									cursor: busy ? "default" : "pointer",
-									opacity: busy ? 0.45 : 1
-								},
-								children: busy ? t("scheduledArchiving") : `${t("scheduledArchiveSelected")} (${selectedCount})`
-							}),
-							react_jsx_runtime.jsx("button", {
-								type: "button",
-								disabled: busy,
-								onClick: () => setSelectedIds(new Set()),
-								style: { ...controlStyle, cursor: "pointer", opacity: 0.85 },
-								children: t("clearSelection")
-							})
-						]
-					}) : null,
 
 					confirming ? react_jsx_runtime.jsx(ConfirmModal, {
 						t,
+						busy,
+						busyText: t("scheduledArchiving"),
 						danger: false,
 						title: `${selectedCount} ${t("statsUnit")}`,
-						summary: "",
+						summary: selectedHiddenCount > 0 ? `${selectedHiddenCount} ${t("scheduledSelectedHidden")}` : "",
 						titleText: t("scheduledConfirmTitle"),
 						bodyText: t("scheduledConfirmBody"),
 						okText: t("scheduledArchiveSelected"),
@@ -1389,12 +1413,14 @@ window.__ModuleLoader__.load({
 							react_jsx_runtime.jsx("button", {
 								type: "button",
 								onClick: () => setView("archived"),
+								"aria-pressed": view === "archived",
 								style: tabStyle(view === "archived"),
 								children: t("tabArchived")
 							}),
 							react_jsx_runtime.jsx("button", {
 								type: "button",
 								onClick: () => setView("scheduled"),
+								"aria-pressed": view === "scheduled",
 								style: tabStyle(view === "scheduled"),
 								children: t("tabScheduled")
 							})
