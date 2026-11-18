@@ -4,13 +4,17 @@
 
 批量管理 DeepSeek Harness 的归档会话：搜索、筛选、排序、多选、取消归档、彻底删除，全部集中在 **设置 → 归档管理 Pro**。
 
+另一个分区 **设置 → 定时任务会话** 做的是反方向的事：找出定时任务创建、且尚未归档的会话，一键勾选后批量归档。
+
 ![归档管理 Pro 设置分区](./docs/preview.svg)
 
 ## 它解决什么问题
 
 DeepSeek Harness 自带归档功能，却没有配套的维护手段。归档几十个会话之后，只剩一个平铺的列表：不能搜索、不能筛选、不能多选，想回收磁盘空间只能一条条点。归档的日志会一直留在磁盘上，这个缺口带来的成本会静悄悄地涨。
 
-这个插件补的正是这一层。
+反方向同样有缺口。周期性的定时任务每次触发都会新建一个会话，这些会话堆在侧边栏里，只能一个个手动归档。
+
+这个插件把两边的维护层都补上。
 
 ## 功能
 
@@ -30,6 +34,33 @@ DeepSeek Harness 自带归档功能，却没有配套的维护手段。归档几
 
 磁盘体积读取的是会话日志目录的真实占用，可以优先处理最占空间的存档。
 
+## 定时任务会话
+
+**设置 → 定时任务会话** 处理的是定时任务创建、且**尚未归档**的会话——与归档管理正好相反。
+
+| 能力 | 说明 |
+| --- | --- |
+| 一键勾选 | 扫描所有任务的投递记录，勾选全部仍未归档的任务会话 |
+| 闲置时长阈值 | 只归档最后一次投递已超过所选时长的会话（1 小时 / 6 小时 / 24 小时 / 7 天 / 30 天） |
+| 正在执行的任务 | 整份任务跳过，不纳入归档范围 |
+| 显示来源 | 每行标出是哪个定时任务创建的 |
+| 天然安全 | 复用主人已有会话的任务，其会话绝不会被列入 |
+| 批量归档 | 一次确认，然后归档所有勾选项 |
+| 容错 | 单个会话失败不影响其余，失败原因会报出来 |
+| 已置顶会话 | 不自动勾选，需要时手工勾选 |
+
+**会话是怎么找到的。** DSH 不会在会话上标记它由哪个任务产生——定时任务创建会话时不带任何元信息。唯一可靠的记录是任务自己的投递回执，其中的 `targetSessionId` 指向接收该次投递的会话。本插件读取的就是这些回执。
+
+**不会误伤正在跑的任务。** 一次投递创建会话后，agent 随即执行该次任务，所以**最后一次投递的时间**就是这次运行的开始时间。只有当它距今已超过所选阈值（默认 1 小时）才纳入归档范围；刚投递几分钟的会话不会被碰到。任务本身仍在 active 也没关系——下次触发会**新建**会话，归档历史会话不影响它继续跑。若任务的最新投递仍处于排队或执行中，整份任务直接跳过。
+
+**只有任务新建的会话才算数。** 定时任务可以把投递送到主人已有的会话（`target.kind === 'session'`），那些会话属于主人，绝不会被碰。只有自己新建会话的任务（`new` 与 `new_once`）才会进入列表。
+
+**归档是可逆的。** 它只是把会话移出侧边栏、放进 **归档管理 Pro**，在那里和其他归档会话一样可以取消归档或彻底删除。这一步不删除任何东西。
+
+> 仍在运行的定时任务下次触发照样会新建会话。想彻底断流，请先暂停或删除该任务。
+
+该功能依赖 DSH 的定时任务（schedule）服务。没有该服务时，页面会说明不可用，而不是报错。
+
 ## 安装
 
 在 DSH 应用里打开 **设置 → 插件 → 安装**，搜索 `dsh-archive-pro`。
@@ -42,7 +73,7 @@ dsh plugin --profile web add dsh-archive-pro
 
 包已发布到 [npm](https://www.npmjs.com/package/dsh-archive-pro)，包名 `dsh-archive-pro`。
 
-安装后进入 **设置 → 归档管理 Pro**。
+安装后进入 **设置 → 归档管理 Pro**；任务创建的会话在 **设置 → 定时任务会话**。
 
 ## 彻底删除做了什么
 
@@ -80,17 +111,20 @@ dsh plugin --profile web add dsh-archive-pro
 }
 ```
 
-- **宿主半**（`lib/index.js`）注入 `webServer`、`storageDomain`、`workspaceRegistry`、`sessionPersistence`、`sessions`、`agents`，在 `/dsh-archive-pro/*` 下挂载 5 条路由。
-- **客户端半**（`client/client.js`）是免构建的经典脚本，经 `window.__ModuleLoader__.load` 加载，注册一个 `settings.section`，以及可选的系统右键菜单项。
+- **宿主半**（`lib/index.js`）注入 `webServer`、`storageDomain`、`workspaceRegistry`、`sessionPersistence`、`sessions`、`agents`，在 `/dsh-archive-pro/*` 下挂载 7 条路由。
+- **客户端半**（`client/client.js`）是免构建的经典脚本，经 `window.__ModuleLoader__.load` 加载，注册两个 `settings.section`，以及可选的系统右键菜单项。
 - 所有会话拆解都委托给 `lib/session-lifecycle.js`：取消运行中的任务、等待空闲/释放、关闭持久化写入器、清理缓存条目。
+- 定时任务会话的识别放在 `lib/scheduled-sessions.js`，惰性读取可选的 schedule 服务，因此没有该服务插件也能正常加载。
 
 ## 仓库结构
 
 ```
 lib/index.js              宿主入口：挂载路由、接上删除对账
-lib/routes.js             列表、取消归档、删除、批量删除、批量取消归档
+lib/routes.js             列表、取消归档、删除、批量删除、批量取消归档、
+                          定时任务会话列表、批量归档
+lib/scheduled-sessions.js 定时任务会话的识别
 lib/session-lifecycle.js  安全的会话 / 任务 / 写入器拆解
-client/client.js          设置分区 + 右键菜单（免构建 CJS 模块）
+client/client.js          两个设置分区 + 右键菜单（免构建 CJS 模块）
 locale/zh.json            中文市场元数据
 locale/en.json            英文市场元数据
 docs/DETAIL.md            英文详情页（单张功能图）
@@ -108,7 +142,13 @@ cordis.patch.yml          bundle 补丁，插入本插件
 # 语法检查
 node --check lib/index.js
 node --check lib/routes.js
+node --check lib/scheduled-sessions.js
 node --check client/client.js
+
+# 测试
+node test/scheduled-sessions.test.mjs
+node test/scheduled-flow.test.mjs
+node test/client.test.mjs
 ```
 
 本地迭代时安装工作副本：

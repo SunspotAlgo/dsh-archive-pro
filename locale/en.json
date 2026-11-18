@@ -1,1 +1,7 @@
-{"meta":{"title":"Archive manager pro","description":"Search, multi-filter, sort, single/multi-select, and batch delete or restore archived sessions.","detail":"docs/DETAIL.md"}}
+{
+  "meta": {
+    "title": "Archive manager pro",
+    "description": "Bulk management for archived sessions: search, filter, sort, multi-select, unarchive, and permanently delete. A second section selects and archives the unarchived sessions that scheduled tasks created, in one click.",
+    "detail": "docs/DETAIL.md"
+  }
+}

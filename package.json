@@ -1,7 +1,7 @@
 {
   "name": "dsh-archive-pro",
-  "version": "1.0.0",
-  "description": "Archive manager pro for DeepSeek Harness: search, filter, sort, multi-select, unarchive, and permanently delete archived sessions.",
+  "version": "1.1.0",
+  "description": "Archive manager pro for DeepSeek Harness: manage archived sessions, and archive in one click the unarchived sessions that scheduled tasks created.",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
@@ -28,6 +28,7 @@
     "archive",
     "session",
     "batch-delete",
+    "scheduled-tasks",
     "plugin"
   ],
   "publishConfig": {

@@ -75,7 +75,39 @@ window.__ModuleLoader__.load({
 			batchRestoreBody: "所选会话将取消归档，重新显示在原工作区的侧边栏中，会话内容不会被删除。",
 			batchResultSummary: "处理完成：成功",
 			batchResultFailed: "失败",
-			skipPinnedLabel: "一键清空时跳过已置顶会话"
+			skipPinnedLabel: "一键清空时跳过已置顶会话",
+			scheduledNav: "定时任务会话",
+			scheduledDesc: "清理尚未归档的定时任务会话：一键勾选由定时任务触发的会话，确认后批量归档。归档不会删除任何文件，之后仍可在「归档管理 Pro」里取消归档或永久删除。",
+			scheduledUnavailable: "当前环境未启用定时任务（schedule）服务，无法识别由定时任务触发的会话。",
+			scheduledEmpty: "没有发现由定时任务创建、且尚未归档的会话。",
+			scheduledEmptyFiltered: "没有符合条件的定时任务会话。",
+			scheduledScan: "一键勾选定时任务会话",
+			scheduledScanTip: "扫描定时任务的投递记录，勾选全部由定时任务创建、且尚未归档的会话",
+			scheduledScanning: "扫描中…",
+			scheduledRefresh: "刷新",
+			scheduledArchiveSelected: "归档所选",
+			scheduledArchiving: "归档中…",
+			scheduledStats: "共发现",
+			scheduledStatsFound: "个定时任务会话",
+			scheduledStatsArchived: "个已归档",
+			scheduledStatsSelected: "已勾选",
+			scheduledPinnedSkipped: "个已置顶（未自动勾选）",
+			scheduledConfirmTitle: "确认归档所选会话？",
+			scheduledConfirmBody: "所选会话将从侧边栏隐藏并移入「归档管理 Pro」。会话内容不会被删除，随时可以取消归档。",
+			scheduledDone: "归档完成：成功",
+			scheduledTask: "来源任务",
+			scheduledUnknownTask: "未命名任务",
+			scheduledPruned: "部分早期投递记录已超出保留期，可能有会话未被识别。",
+			scheduledTaskRunning: "定时任务仍在运行：归档只影响现有会话，下次触发仍会新建会话。若要停止新增，请先暂停或删除该任务。",
+			scheduledAge: "会话闲置至少",
+			scheduledAge1h: "1 小时",
+			scheduledAge6h: "6 小时",
+			scheduledAge24h: "24 小时",
+			scheduledAge7d: "7 天",
+			scheduledAge30d: "30 天",
+			scheduledAgeNote: "只归档最后一次投递已超过该时长的会话，正在跑的任务不受影响。",
+			scheduledSkippedRecent: "个会话因过近未纳入",
+			scheduledSkippedRunning: "个任务正在执行，已跳过"
 		};
 		const en = {
 			nav: "Archive manager pro",
@@ -138,7 +170,39 @@ window.__ModuleLoader__.load({
 			batchRestoreBody: "Selected sessions will be unarchived and shown back in their workspace sidebar. Nothing is deleted.",
 			batchResultSummary: "Done: succeeded",
 			batchResultFailed: "failed",
-			skipPinnedLabel: "Skip pinned sessions on purge"
+			skipPinnedLabel: "Skip pinned sessions on purge",
+			scheduledNav: "Scheduled sessions",
+			scheduledDesc: "Tidy up the sessions that scheduled tasks created and that are not archived yet: select them all in one click, then archive the selection. Archiving deletes nothing and the sessions stay manageable in Archive manager pro.",
+			scheduledUnavailable: "This profile has no schedule service, so task-created sessions cannot be identified.",
+			scheduledEmpty: "No unarchived session created by a scheduled task was found.",
+			scheduledEmptyFiltered: "No scheduled session matches the current filters.",
+			scheduledScan: "Select all task sessions",
+			scheduledScanTip: "Read the delivery records of every scheduled task and select the sessions it created that are not archived yet",
+			scheduledScanning: "Scanning…",
+			scheduledRefresh: "Refresh",
+			scheduledArchiveSelected: "Archive selected",
+			scheduledArchiving: "Archiving…",
+			scheduledStats: "Found",
+			scheduledStatsFound: "task sessions",
+			scheduledStatsArchived: "already archived",
+			scheduledStatsSelected: "selected",
+			scheduledPinnedSkipped: "pinned, not selected automatically",
+			scheduledConfirmTitle: "Archive the selected sessions?",
+			scheduledConfirmBody: "The selected sessions leave the sidebar and move to Archive manager pro. Nothing is deleted and they can be unarchived at any time.",
+			scheduledDone: "Archived: succeeded",
+			scheduledTask: "Task",
+			scheduledUnknownTask: "Untitled task",
+			scheduledPruned: "Some older delivery records fell outside the retention window, so a few sessions may be missing.",
+			scheduledTaskRunning: "The scheduled task keeps running: archiving affects the sessions that exist now, and the next trigger still creates a new one. Pause or delete the task to stop new ones.",
+			scheduledAge: "Session idle for at least",
+			scheduledAge1h: "1 hour",
+			scheduledAge6h: "6 hours",
+			scheduledAge24h: "24 hours",
+			scheduledAge7d: "7 days",
+			scheduledAge30d: "30 days",
+			scheduledAgeNote: "Only sessions whose latest delivery is older than this are archived, so a task that is still running is left alone.",
+			scheduledSkippedRecent: "sessions too recent to include",
+			scheduledSkippedRunning: "tasks still running, skipped"
 		};
 
 		function formatBytes(bytes) {
@@ -883,6 +947,390 @@ window.__ModuleLoader__.load({
 			});
 		}
 
+		/**
+		 * One row of the scheduled-session list.
+		 * @param row - the session record from the host.
+		 * @param t - the locale translator.
+		 * @param props - selection and busy state.
+		 * @returns the row element.
+		 */
+		function ScheduledRow({ row, t, selected, onToggle, busy }) {
+			const created = row.createdAt != null ? new Date(row.createdAt).toLocaleString() : t("none");
+			const title = row.title || row.sessionId;
+			const wsLabel = row.workspaceTitle || t("unassignedWorkspace");
+			const taskLabel = row.taskTitle || t("scheduledUnknownTask");
+			return react_jsx_runtime.jsxs("div", {
+				style: {
+					display: "flex",
+					alignItems: "center",
+					gap: 10,
+					padding: "9px 12px",
+					borderBottom: "1px solid var(--dsh-border, rgba(128,128,128,.16))",
+					background: selected ? "rgba(65,118,230,.07)" : "transparent"
+				},
+				children: [
+					react_jsx_runtime.jsx("input", {
+						type: "checkbox",
+						checked: selected,
+						disabled: busy,
+						onChange: () => onToggle(row.sessionId),
+						"aria-label": title,
+						style: { cursor: busy ? "default" : "pointer" }
+					}),
+					react_jsx_runtime.jsxs("div", {
+						style: { flex: "1 1 220px", minWidth: 0 },
+						children: [
+							react_jsx_runtime.jsx("div", {
+								style: { fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+								children: title
+							}),
+							react_jsx_runtime.jsxs("div", {
+								style: { fontSize: 11, opacity: 0.6, display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 },
+								children: [
+									react_jsx_runtime.jsx("span", { children: `${t("scheduledTask")}: ${taskLabel}` }),
+									row.isPinned ? react_jsx_runtime.jsx("span", {
+										style: { color: "var(--dsh-warning, #e6a23c)" },
+										children: t("pinnedTag")
+									}) : null
+								]
+							})
+						]
+					}),
+					react_jsx_runtime.jsx("span", {
+						style: { fontSize: 11, opacity: 0.7, whiteSpace: "nowrap" },
+						children: created
+					}),
+					react_jsx_runtime.jsx("span", {
+						style: { fontSize: 11, opacity: 0.7, whiteSpace: "nowrap" },
+						children: wsLabel
+					}),
+					react_jsx_runtime.jsx("span", {
+						style: { fontSize: 11, opacity: 0.7, whiteSpace: "nowrap", minWidth: 62, textAlign: "right" },
+						children: formatBytes(row.sizeBytes)
+					})
+				]
+			});
+		}
+
+		/**
+		 * The "scheduled sessions" settings section.
+		 *
+		 * It lists the Sessions that scheduled tasks created and that are not
+		 * archived yet, offers one-click selection of all of them, and archives
+		 * the selection. Archiving is reversible; nothing is deleted here.
+		 * @param props - the injected props.
+		 * @returns the section element.
+		 */
+		function ScheduledSessionsSection({ t }) {
+			const [data, setData] = react.useState(null);
+			const [available, setAvailable] = react.useState(true);
+			const [error, setError] = react.useState(null);
+			const [notice, setNotice] = react.useState(null);
+			const [busy, setBusy] = react.useState(false);
+			const [scanning, setScanning] = react.useState(false);
+			const [query, setQuery] = react.useState("");
+			const [selectedIds, setSelectedIds] = react.useState(() => new Set());
+			const [confirming, setConfirming] = react.useState(false);
+			// How old the latest delivery must be before a session may be archived.
+			const [minAgeMinutes, setMinAgeMinutes] = react.useState(60);
+
+			const load = react.useCallback(() => {
+				setError(null);
+				fetch(`/dsh-archive-pro/scheduled-sessions?minAgeMinutes=${minAgeMinutes}`, { cache: "no-store" })
+					.then((res) => res.json())
+					.then((body) => {
+						if (body && body.ok === true) {
+							setAvailable(body.available !== false);
+							setData(body);
+							setSelectedIds((prev) => {
+								const valid = new Set((body.sessions ?? []).map((r) => r.sessionId));
+								const next = new Set();
+								for (const id of prev) if (valid.has(id)) next.add(id);
+								return next;
+							});
+						} else {
+							setError((body && body.error) || t("loadFailed"));
+						}
+					})
+					.catch(() => setError(t("loadFailed")));
+			}, [t]);
+
+			react.useEffect(() => {
+				load();
+			}, [load]);
+
+			const sessions = data?.sessions ?? [];
+			const visible = react.useMemo(() => {
+				const q = query.trim().toLowerCase();
+				if (!q) return sessions;
+				return sessions.filter((r) => {
+					const title = (r.title || "").toLowerCase();
+					const id = (r.sessionId || "").toLowerCase();
+					const task = (r.taskTitle || "").toLowerCase();
+					return title.includes(q) || id.includes(q) || task.includes(q);
+				});
+			}, [sessions, query]);
+
+			const toggle = react.useCallback((sessionId) => {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(sessionId)) next.delete(sessionId);
+					else next.add(sessionId);
+					return next;
+				});
+			}, []);
+
+			/** Select every unarchived task session that is not pinned. */
+			const selectAll = react.useCallback(() => {
+				setScanning(true);
+				setNotice(null);
+				fetch(`/dsh-archive-pro/scheduled-sessions?minAgeMinutes=${minAgeMinutes}`, { cache: "no-store" })
+					.then((res) => res.json())
+					.then((body) => {
+						if (!body || body.ok !== true) {
+							setError((body && body.error) || t("loadFailed"));
+							return;
+						}
+						setAvailable(body.available !== false);
+						setData(body);
+						const rows = body.sessions ?? [];
+						const picked = new Set();
+						let skipped = 0;
+						for (const row of rows) {
+							if (row.isPinned) { skipped++; continue; }
+							picked.add(row.sessionId);
+						}
+						setSelectedIds(picked);
+						setNotice({
+							kind: "scan",
+							found: body.discovered ?? rows.length,
+							selected: picked.size,
+							skipped,
+						});
+					})
+					.catch(() => setError(t("loadFailed")))
+					.finally(() => setScanning(false));
+			}, [t, minAgeMinutes]);
+
+			const archiveSelected = react.useCallback(async () => {
+				const ids = [...selectedIds];
+				if (ids.length === 0) return;
+				setBusy(true);
+				setError(null);
+				try {
+					const response = await fetch("/dsh-archive-pro/archive", {
+						method: "POST",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ sessionIds: ids })
+					});
+					const body = await response.json();
+					if (!body || body.ok !== true) {
+						setError((body && body.error) || t("loadFailed"));
+						return;
+					}
+					setNotice({ kind: "done", archived: body.archived ?? 0, failed: body.failed ?? 0 });
+					setSelectedIds(new Set());
+					load();
+				}
+				catch (reason) {
+					setError(reason instanceof Error ? reason.message : String(reason));
+				}
+				finally {
+					setBusy(false);
+					setConfirming(false);
+				}
+			}, [selectedIds, load, t]);
+
+			const controlStyle = {
+				padding: "5px 10px",
+				borderRadius: 6,
+				border: "1px solid var(--dsh-border, rgba(128,128,128,.35))",
+				background: "var(--dsw-alias-bg-overlay, rgba(128,128,128,.08))",
+				color: "inherit",
+				fontSize: 12,
+				outline: "none"
+			};
+
+			let body;
+			if (data === null) {
+				body = react_jsx_runtime.jsx("div", { style: { padding: 12, opacity: 0.7 }, children: error ? null : t("loading") });
+			}
+			else if (!available) {
+				body = react_jsx_runtime.jsx("div", { style: { padding: 12, opacity: 0.75, lineHeight: 1.6 }, children: t("scheduledUnavailable") });
+			}
+			else if (sessions.length === 0) {
+				body = react_jsx_runtime.jsx("div", { style: { padding: 12, opacity: 0.7 }, children: t("scheduledEmpty") });
+			}
+			else if (visible.length === 0) {
+				body = react_jsx_runtime.jsx("div", { style: { padding: 16, opacity: 0.7, textAlign: "center" }, children: t("scheduledEmptyFiltered") });
+			}
+			else {
+				body = react_jsx_runtime.jsx("div", {
+					style: { border: "1px solid var(--dsh-border, rgba(128,128,128,.25))", borderRadius: 8, overflow: "hidden" },
+					children: visible.map((row) => react_jsx_runtime.jsx(ScheduledRow, {
+						row,
+						t,
+						selected: selectedIds.has(row.sessionId),
+						onToggle: toggle,
+						busy: busy || scanning
+					}, row.sessionId))
+				});
+			}
+
+			const selectedCount = selectedIds.size;
+
+			return react_jsx_runtime.jsxs("div", {
+				style: { display: "flex", flexDirection: "column", gap: 10, padding: "4px 0" },
+				children: [
+					react_jsx_runtime.jsx("div", { style: { fontSize: 13, opacity: 0.8, padding: "0 12px", lineHeight: 1.6 }, children: t("scheduledDesc") }),
+
+					react_jsx_runtime.jsxs("div", {
+						style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", padding: "0 12px" },
+						children: [
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: !available || scanning || busy,
+								onClick: selectAll,
+								title: t("scheduledScanTip"),
+								style: {
+									...controlStyle,
+									cursor: !available || scanning || busy ? "default" : "pointer",
+									opacity: !available || scanning || busy ? 0.45 : 1,
+									fontWeight: 600,
+									color: "var(--dsw-alias-brand-primary, #4176e6)",
+									borderColor: "rgba(65,118,230,.5)",
+									background: "rgba(65,118,230,.12)"
+								},
+								children: scanning ? t("scheduledScanning") : t("scheduledScan")
+							}),
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: busy || scanning,
+								onClick: load,
+								style: { ...controlStyle, cursor: "pointer", opacity: 0.85 },
+								children: t("scheduledRefresh")
+							}),
+							react_jsx_runtime.jsxs("div", {
+								style: { display: "flex", gap: 6, alignItems: "center" },
+								title: t("scheduledAgeNote"),
+								children: [
+									react_jsx_runtime.jsx("span", {
+										style: { fontSize: 11, opacity: 0.65, whiteSpace: "nowrap" },
+										children: t("scheduledAge")
+									}),
+									react_jsx_runtime.jsxs("select", {
+										value: String(minAgeMinutes),
+										disabled: busy || scanning,
+										onChange: (event) => setMinAgeMinutes(Number(event.target.value)),
+										style: { ...controlStyle, cursor: "pointer" },
+										children: [
+											react_jsx_runtime.jsx("option", { value: "60", children: t("scheduledAge1h") }),
+											react_jsx_runtime.jsx("option", { value: "360", children: t("scheduledAge6h") }),
+											react_jsx_runtime.jsx("option", { value: "1440", children: t("scheduledAge24h") }),
+											react_jsx_runtime.jsx("option", { value: "10080", children: t("scheduledAge7d") }),
+											react_jsx_runtime.jsx("option", { value: "43200", children: t("scheduledAge30d") })
+										]
+									})
+								]
+							}),
+							sessions.length > 0 ? react_jsx_runtime.jsx("input", {
+								type: "text",
+								value: query,
+								onChange: (event) => setQuery(event.target.value),
+								placeholder: t("searchPlaceholder"),
+								style: { ...controlStyle, flex: "1 1 200px", minWidth: 160 }
+							}) : null
+						]
+					}),
+
+					data !== null && (sessions.length > 0 || (data.skippedRecent ?? 0) > 0) ? react_jsx_runtime.jsxs("div", {
+						style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", fontSize: 12, opacity: 0.75, padding: "0 12px" },
+						children: [
+							react_jsx_runtime.jsx("span", { children: `${t("scheduledStats")} ${data.discovered ?? sessions.length} ${t("scheduledStatsFound")}` }),
+							react_jsx_runtime.jsx("span", { children: `${t("scheduledStatsSelected")} ${selectedCount}` }),
+							(data.skippedRecent ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
+								style: { color: "var(--dsh-warning, #e6a23c)" },
+								children: `${data.skippedRecent} ${t("scheduledSkippedRecent")}`
+							}) : null,
+							(data.skippedRunning ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
+								style: { color: "var(--dsh-warning, #e6a23c)" },
+								children: `${data.skippedRunning} ${t("scheduledSkippedRunning")}`
+							}) : null,
+							notice?.kind === "scan" && notice.skipped > 0 ? react_jsx_runtime.jsx("span", {
+								style: { color: "var(--dsh-warning, #e6a23c)" },
+								children: `${notice.skipped} ${t("scheduledPinnedSkipped")}`
+							}) : null
+						]
+					}) : null,
+
+					notice?.kind === "done" ? react_jsx_runtime.jsx("div", {
+						style: { fontSize: 12, color: "var(--dsh-success, #4aa05a)", padding: "0 12px" },
+						children: `${t("scheduledDone")} ${notice.archived}${notice.failed > 0 ? ` · ${t("batchResultFailed")} ${notice.failed}` : ""}`
+					}) : null,
+
+					data?.pruned === true ? react_jsx_runtime.jsx("div", {
+						style: { fontSize: 12, color: "var(--dsh-warning, #e6a23c)", padding: "0 12px", lineHeight: 1.5 },
+						children: t("scheduledPruned")
+					}) : null,
+
+					sessions.length > 0 ? react_jsx_runtime.jsx("div", {
+						style: { fontSize: 12, opacity: 0.6, padding: "0 12px", lineHeight: 1.5 },
+						children: t("scheduledTaskRunning")
+					}) : null,
+
+					error === null ? null : react_jsx_runtime.jsx("div", {
+						role: "alert",
+						style: { fontSize: 12, color: "var(--dsh-danger, #dc5050)", whiteSpace: "pre-wrap", padding: "0 12px" },
+						children: error
+					}),
+
+					react_jsx_runtime.jsx("div", { style: { padding: "0 12px" }, children: body }),
+
+					selectedCount > 0 ? react_jsx_runtime.jsxs("div", {
+						style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "0 12px" },
+						children: [
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: busy,
+								onClick: () => setConfirming(true),
+								style: {
+									padding: "6px 16px",
+									borderRadius: 6,
+									fontSize: 12,
+									fontWeight: 600,
+									border: "1px solid rgba(65,118,230,.5)",
+									background: "rgba(65,118,230,.14)",
+									color: "var(--dsw-alias-brand-primary, #4176e6)",
+									cursor: busy ? "default" : "pointer",
+									opacity: busy ? 0.45 : 1
+								},
+								children: busy ? t("scheduledArchiving") : `${t("scheduledArchiveSelected")} (${selectedCount})`
+							}),
+							react_jsx_runtime.jsx("button", {
+								type: "button",
+								disabled: busy,
+								onClick: () => setSelectedIds(new Set()),
+								style: { ...controlStyle, cursor: "pointer", opacity: 0.85 },
+								children: t("clearSelection")
+							})
+						]
+					}) : null,
+
+					confirming ? react_jsx_runtime.jsx(ConfirmModal, {
+						t,
+						danger: false,
+						title: `${selectedCount} ${t("statsUnit")}`,
+						summary: "",
+						titleText: t("scheduledConfirmTitle"),
+						bodyText: t("scheduledConfirmBody"),
+						okText: t("scheduledArchiveSelected"),
+						onCancel: () => setConfirming(false),
+						onConfirm: archiveSelected
+					}) : null
+				]
+			});
+		}
+
 		function DeleteSessionMenuItem({ sessionId, displayTitle, useMenuOpenState, requestDelete, deleteT, nativeMenuAvailable }) {
 			const [, setOpen] = useMenuOpenState();
 			if (nativeMenuAvailable?.()) return null;
@@ -993,6 +1441,17 @@ window.__ModuleLoader__.load({
 				locale: NS,
 				inject: () => ({ t })
 			}, ArchiveManagerSection));
+			// A separate section: this one tidies sessions that are not archived yet,
+			// which is a different job from managing the archive itself.
+			ctx.slots.inject("settings.section", () => ctx.slots.register({
+				name: "settings.section",
+				id: "archive-pro-scheduled",
+				priority: -2,
+				order: 61,
+				label: () => t("scheduledNav"),
+				locale: NS,
+				inject: () => ({ t })
+			}, ScheduledSessionsSection));
 		}
 		exports.name = name;
 		exports.inject = inject;
