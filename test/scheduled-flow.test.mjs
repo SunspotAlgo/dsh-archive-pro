@@ -159,6 +159,96 @@ console.log('\n=== without a schedule service the listing reports unavailability
 
 rmSync(home, { recursive: true, force: true });
 
+console.log('\n=== a session the user deleted is not counted as found ===');
+{
+	// The delivery history names a session that no longer exists anywhere.
+	const goneHome = mkdtempSync(join(tmpdir(), 'archive-pro-gone-'));
+	const goneId = 'session-33333333-3333-4333-8333-333333333333';
+	const liveId = 'session-44444444-4444-4444-8444-444444444444';
+	mkdirSync(join(goneHome, 'sessions', 'ws', liveId), { recursive: true });
+	const old = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+	const goneTasks = [
+		{
+			id: 'task-gone',
+			record: { title: '历史任务' },
+			target: { kind: 'new', create: {} },
+			records: [
+				{ targetSessionId: goneId, deliveredAt: old },
+				{ targetSessionId: liveId, deliveredAt: old },
+			],
+		},
+	];
+	const goneHost = {
+		sessionPersistence: { root: join(goneHome, 'sessions') },
+		workspaceRegistry: {
+			get archivedSessionIds() { return []; },
+			requireState: () => ({ pinnedSessionIds: [] }),
+			list: () => [],
+		},
+		get: (name) => (name === 'schedule'
+			? {
+				list: async () => ({ items: goneTasks, shown: goneTasks.length, total: goneTasks.length }),
+				history: async ({ id }) => ({
+					id,
+					records: goneTasks.find((t) => t.id === id)?.records ?? [],
+					earlierRecordsUnavailable: false,
+					earlierRecordsPruned: false,
+					retention: { days: 30 },
+				}),
+			}
+			: undefined),
+	};
+
+	const body = await listScheduledSessions(goneHost, { minAgeMs: 60 * 60 * 1000 });
+	check('only the live session is listed', body.sessions.length, 1);
+	check('the count matches the list', body.discovered, body.sessions.length);
+	check('the vanished session is counted as gone', body.skippedGone, 1);
+	check('the history total still names both', body.total, 2);
+	rmSync(goneHome, { recursive: true, force: true });
+}
+
+console.log('\n=== an already archived session is counted separately ===');
+{
+	const archHome = mkdtempSync(join(tmpdir(), 'archive-pro-arch-'));
+	const archId = 'session-55555555-5555-4555-8555-555555555555';
+	mkdirSync(join(archHome, 'sessions', 'ws', archId), { recursive: true });
+	const old = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+	const archTasks = [
+		{
+			id: 'task-arch',
+			record: { title: '已归档' },
+			target: { kind: 'new', create: {} },
+			records: [{ targetSessionId: archId, deliveredAt: old }],
+		},
+	];
+	const archHost = {
+		sessionPersistence: { root: join(archHome, 'sessions') },
+		workspaceRegistry: {
+			get archivedSessionIds() { return [archId]; },
+			requireState: () => ({ pinnedSessionIds: [] }),
+			list: () => [],
+		},
+		get: (name) => (name === 'schedule'
+			? {
+				list: async () => ({ items: archTasks, shown: archTasks.length, total: archTasks.length }),
+				history: async ({ id }) => ({
+					id,
+					records: archTasks.find((t) => t.id === id)?.records ?? [],
+					earlierRecordsUnavailable: false,
+					earlierRecordsPruned: false,
+					retention: { days: 30 },
+				}),
+			}
+			: undefined),
+	};
+
+	const body = await listScheduledSessions(archHost, { minAgeMs: 60 * 60 * 1000 });
+	check('nothing is offered', body.sessions.length, 0);
+	check('the count matches the empty list', body.discovered, 0);
+	check('the archived session is counted as archived', body.skippedArchived, 1);
+	rmSync(archHome, { recursive: true, force: true });
+}
+
 const failed = results.filter((r) => !r).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exitCode = failed === 0 ? 0 : 1;

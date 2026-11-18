@@ -1,6 +1,6 @@
 {
   "name": "dsh-archive-pro",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Archive manager pro for DeepSeek Harness: manage archived sessions, and archive in one click the unarchived sessions that scheduled tasks created.",
   "type": "module",
   "main": "lib/index.js",
@@ -78,3 +78,4 @@
     }
   }
 }
+

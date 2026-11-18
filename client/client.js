@@ -91,6 +91,8 @@ window.__ModuleLoader__.load({
 			scheduledStatsFound: "个定时任务会话",
 			scheduledStatsArchived: "个已归档",
 			scheduledStatsSelected: "已勾选",
+			scheduledStatsGone: "个历史会话已被删除",
+			scheduledStatsTotal: "投递记录共涉及",
 			scheduledPinnedSkipped: "个已置顶（未自动勾选）",
 			scheduledConfirmTitle: "确认归档所选会话？",
 			scheduledConfirmBody: "所选会话将从侧边栏隐藏并移入「归档管理 Pro」。会话内容不会被删除，随时可以取消归档。",
@@ -188,6 +190,8 @@ window.__ModuleLoader__.load({
 			scheduledStatsFound: "task sessions",
 			scheduledStatsArchived: "already archived",
 			scheduledStatsSelected: "selected",
+			scheduledStatsGone: "earlier sessions were deleted",
+			scheduledStatsTotal: "the delivery records name",
 			scheduledPinnedSkipped: "pinned, not selected automatically",
 			scheduledConfirmTitle: "Archive the selected sessions?",
 			scheduledConfirmBody: "The selected sessions leave the sidebar and move to Archive manager pro. Nothing is deleted and they can be unarchived at any time.",
@@ -1247,7 +1251,7 @@ window.__ModuleLoader__.load({
 						]
 					}),
 
-					data !== null && (sessions.length > 0 || (data.skippedRecent ?? 0) > 0) ? react_jsx_runtime.jsxs("div", {
+					data !== null && (sessions.length > 0 || (data.skippedRecent ?? 0) > 0 || (data.skippedGone ?? 0) > 0) ? react_jsx_runtime.jsxs("div", {
 						style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", fontSize: 12, opacity: 0.75, padding: "0 12px" },
 						children: [
 							react_jsx_runtime.jsx("span", { children: `${t("scheduledStats")} ${data.discovered ?? sessions.length} ${t("scheduledStatsFound")}` }),
@@ -1259,6 +1263,15 @@ window.__ModuleLoader__.load({
 							(data.skippedRunning ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
 								style: { color: "var(--dsh-warning, #e6a23c)" },
 								children: `${data.skippedRunning} ${t("scheduledSkippedRunning")}`
+							}) : null,
+							(data.skippedGone ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
+								children: `${data.skippedGone} ${t("scheduledStatsGone")}`
+							}) : null,
+							(data.skippedArchived ?? 0) > 0 ? react_jsx_runtime.jsx("span", {
+								children: `${data.skippedArchived} ${t("scheduledStatsArchived")}`
+							}) : null,
+							(data.total ?? 0) > (data.discovered ?? 0) + (data.skippedRecent ?? 0) + (data.skippedGone ?? 0) ? react_jsx_runtime.jsx("span", {
+								children: `${t("scheduledStatsTotal")} ${data.total}`
 							}) : null,
 							notice?.kind === "scan" && notice.skipped > 0 ? react_jsx_runtime.jsx("span", {
 								style: { color: "var(--dsh-warning, #e6a23c)" },

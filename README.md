@@ -51,6 +51,10 @@ The **Scheduled sessions** tab of **Settings → Archive manager pro** handles t
 
 **How the sessions are found.** DSH does not mark a session with the task that produced it — the schedule runtime creates sessions without any metadata. The only reliable record is the task's own delivery receipt, whose `targetSessionId` names the session that accepted the delivery. This plugin reads those receipts.
 
+**Why the count stays honest.** Delivery receipts are permanent: every session a task ever created stays named in them, long after the session itself is gone. "Sessions the receipts mention" is therefore a number that only ever grows, and it is not the same thing as "sessions you could archive right now". This plugin counts only the sessions that still exist — one is alive when the workspace registry still lists it or its log directory is still on disk; when neither is true it was deleted, and it is excluded.
+
+So the page shows two numbers: **"Found N task sessions" is the number you can archive now** (it matches the list), and a second line explains how many sessions the delivery history names in total and how many of them were deleted. The numbers add up to the history total, so you never see "found 374" above an empty list.
+
 **A running task is never hit.** A delivery creates the session and the agent then performs that run, so the **time of the latest delivery** is when the run began. A session is only in range once that moment is older than the chosen threshold (one hour by default); a session delivered minutes ago is left alone. The task itself staying active does not matter — its next trigger creates a *new* session, and archiving the old one does not disturb it. When a task's latest delivery is still queued or executing, that whole task is skipped.
 
 **Only task-created sessions count.** A scheduled task can target an existing session of yours (`target.kind === 'session'`), and those sessions are yours — they are never touched. Only tasks that create their own sessions (`new` and `new_once`) contribute to the list.
